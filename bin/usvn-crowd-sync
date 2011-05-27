@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+require 'rubygems'
+require 'data_mapper'
+
+require 'crowd'
+require 'usvn-crowd-sync'
+
+CROWD_CONFIG_PATH='/etc/usvn-crowd-sync.yml'
+
+config = YAML::load(IO.read(CROWD_CONFIG_PATH))
+
+DataMapper.setup(:default, config['usvn_datamapper_url'])
+
+
+groups = Group.all
+groups.each do |g|
+  puts "g.name=#{g.name}, id=#{g.id}"
+end
+
+# 通过访问url http://usvn_host/regen_authz_file.php 来重新生成authz文件
+# USVN_Authz::generate();
+

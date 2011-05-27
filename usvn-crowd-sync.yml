@@ -1,0 +1,6 @@
+application_login_url: http://10.241.12.43:7300/login
+application_name: mvnconfig
+application_password: 1qaz2wsx
+crowd_server_url: http://10.241.14.35:8780/services/SecurityServer
+
+usvn_datamapper_url: mysql://root:asdfasdf@localhost/usvn

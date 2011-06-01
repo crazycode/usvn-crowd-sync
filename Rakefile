@@ -25,7 +25,7 @@ Jeweler::Tasks.new do |gem|
   # and development dependencies are only needed for development (ie running rake tasks, tests, etc)
   gem.add_runtime_dependency 'data_mapper'
   gem.add_runtime_dependency 'dm-mysql-adapter'
-  gem.add_runtime_dependency 'crowd'
+  # gem.add_runtime_dependency 'crowd'
   gem.add_development_dependency 'rspec'
 end
 Jeweler::RubygemsDotOrgTasks.new

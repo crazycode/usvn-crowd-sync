@@ -3,20 +3,73 @@
 require 'rubygems'
 require 'data_mapper'
 
+
+$LOAD_PATH.unshift(File.dirname(__FILE__))
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+
 require 'crowd'
+
 require 'usvn-crowd-sync'
 
 CROWD_CONFIG_PATH='/etc/usvn-crowd-sync.yml'
 
-config = YAML::load(IO.read(CROWD_CONFIG_PATH))
+config = YAML.load(File.new(CROWD_CONFIG_PATH))
 
-DataMapper.setup(:default, config['usvn_datamapper_url'])
+DataMapper.setup(:default,
+                 config["usvn_datamapper"])
 
 
 groups = Group.all
 groups.each do |g|
-  puts "g.name=#{g.name}, id=#{g.id}"
+  # 考虑通过正则，只留下英文，数字和_-的组名
+  puts "g.name=#{g.name}, id=#{g.id}, desc=#{g.description}"
 end
+
+crowd = Crowd.new(config)
+crowd_group_names = crowd.find_all_group_names
+
+crowd_group_names.each do |g|
+  puts g
+end
+
+groups = Group.create_or_update(crowd_group_names)
+
+User.all(:password => 'a9asdf907aafeqwerqw').each do |u|
+  GroupUser.all(:users_id => u.id).destroy
+end
+
+
+crowd_group_names.each do |gname|
+  puts "gname=#{gname}"
+
+
+  begin
+    g = Group.first(:name => gname.strip)
+
+    user_names = crowd.find_users_in_group(gname)
+
+    user_names.each do |name|
+      u = User.first(:login => name)
+      if u.nil?
+        crowd_user = crowd.find_by_name(name)
+        #email = crowd_user.email.strip if crowd_user.email.blank?
+        u = User.create(:login => crowd_user.name,
+                        :firstname => crowd_user.name,
+                        :lastname => crowd_user.full_name,
+                        :email => crowd_user.email,
+                        :password => 'a9asdf907aafeqwerqw',
+                        :secret_id => 'a9asdf907aafeqwerqw')
+      end
+      ug = GroupUser.first(:users_id => u.id, :groups_id => g.id)
+      if ug.nil?
+        GroupUser.create(:users_id => u.id, :groups_id => g.id, :is_leader => 0)
+      end
+    end
+  rescue Exception => e
+    puts "Not found #{gname}: #{e}"
+  end
+end
+
 
 # 通过访问url http://usvn_host/regen_authz_file.php 来重新生成authz文件
 # USVN_Authz::generate();

@@ -15,7 +15,7 @@
 
 class User
   include DataMapper::Resource
-  storage_names[:legacy] = 'usvn_users'
+  storage_names[:default] = 'usvn_users'
 
   property :id, Serial, :field => 'users_id'
   property :login, String, :field => 'users_login'
@@ -39,9 +39,39 @@ end
 
 class Group
   include DataMapper::Resource
-  storage_names[:legacy] = 'usvn_groups'
+  storage_names[:default] = 'usvn_groups'
 
   property :id, Serial, :field => 'groups_id'
   property :name, String, :field => 'groups_name'
   property :description, String, :field => 'groups_description'
+
+  def self.create_or_update(names)
+    groups = []
+    names.each do |name|
+      g = Group.first(:name => name)
+      if g.nil?
+        g = Group.create(:name => name)
+      end
+      groups << g
+    end
+    groups
+  end
+
+end
+
+# usvn_users_to_groups
+# +-----------+------------+------+-----+---------+-------+
+# | Field     | Type       | Null | Key | Default | Extra |
+# +-----------+------------+------+-----+---------+-------+
+# | users_id  | int(11)    | NO   | PRI | NULL    |       |
+# | groups_id | int(11)    | NO   | PRI | NULL    |       |
+# | is_leader | tinyint(1) | NO   |     | NULL    |       |
+# +-----------+------------+------+-----+---------+-------+
+class GroupUser
+  include DataMapper::Resource
+  storage_names[:default] = 'usvn_users_to_groups'
+
+  property :users_id, Integer, :key => true
+  property :groups_id, Integer, :key => true
+  property :is_leader, Integer
 end

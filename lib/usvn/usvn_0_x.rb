@@ -12,7 +12,6 @@
 # | users_is_admin  | tinyint(1)   | NO   |     | NULL    |                |
 # | users_secret_id | varchar(32)  | NO   |     | NULL    |                |
 # +-----------------+--------------+------+-----+---------+----------------+
-
 class User
   include DataMapper::Resource
   storage_names[:default] = 'usvn_users'
@@ -48,11 +47,13 @@ class Group
   def self.create_or_update(names)
     groups = []
     names.each do |name|
-      g = Group.first(:name => name)
-      if g.nil?
-        g = Group.create(:name => name)
+      if name =~ /^[a-zA-Z0-9\-\_]+$/
+        g = Group.first(:name => name)
+        if g.nil?
+          g = Group.create(:name => name)
+        end
+        groups << g
       end
-      groups << g
     end
     groups
   end

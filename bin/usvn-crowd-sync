@@ -10,20 +10,13 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 require 'crowd'
 
 require 'usvn-crowd-sync'
+require 'open-uri'
 
 CROWD_CONFIG_PATH='/etc/usvn-crowd-sync.yml'
 
 config = YAML.load(File.new(CROWD_CONFIG_PATH))
 
-DataMapper.setup(:default,
-                 config["usvn_datamapper"])
-
-
-groups = Group.all
-groups.each do |g|
-  # 考虑通过正则，只留下英文，数字和_-的组名
-  puts "g.name=#{g.name}, id=#{g.id}, desc=#{g.description}"
-end
+DataMapper.setup(:default, config["usvn_db"])
 
 crowd = Crowd.new(config)
 crowd_group_names = crowd.find_all_group_names
@@ -42,27 +35,33 @@ end
 crowd_group_names.each do |gname|
   puts "gname=#{gname}"
 
-
   begin
+    user_names = crowd.find_users_in_group(gname)
     g = Group.first(:name => gname.strip)
 
-    user_names = crowd.find_users_in_group(gname)
+    unless g.nil?
+      user_names.each do |name|
+        u = User.first(:login => name)
+        if u.nil?
+          begin
+            crowd_user = crowd.find_by_name(name)
 
-    user_names.each do |name|
-      u = User.first(:login => name)
-      if u.nil?
-        crowd_user = crowd.find_by_name(name)
-        #email = crowd_user.email.strip if crowd_user.email.blank?
-        u = User.create(:login => crowd_user.name,
-                        :firstname => crowd_user.name,
-                        :lastname => crowd_user.full_name,
-                        :email => crowd_user.email,
-                        :password => 'a9asdf907aafeqwerqw',
-                        :secret_id => 'a9asdf907aafeqwerqw')
-      end
-      ug = GroupUser.first(:users_id => u.id, :groups_id => g.id)
-      if ug.nil?
-        GroupUser.create(:users_id => u.id, :groups_id => g.id, :is_leader => 0)
+            #email = crowd_user.email.strip if crowd_user.email.blank?
+            u = User.create(:login => crowd_user.name,
+                            :firstname => crowd_user.name,
+                            :lastname => crowd_user.full_name,
+                            :email => crowd_user.email,
+                            :password => 'a9asdf907aafeqwerqw',
+                            :secret_id => 'a9asdf907aafeqwerqw',
+                            :is_admin => 0)
+          end
+          ug = GroupUser.first(:users_id => u.id, :groups_id => g.id)
+          if ug.nil?
+            GroupUser.create(:users_id => u.id, :groups_id => g.id, :is_leader => 0)
+          end
+        rescue Exception => e1
+          puts "User Not found #{name}: #{e1}"
+        end
       end
     end
   rescue Exception => e
@@ -71,6 +70,11 @@ crowd_group_names.each do |gname|
 end
 
 
-# 通过访问url http://usvn_host/regen_authz_file.php 来重新生成authz文件
-# USVN_Authz::generate();
+usvn_home = config['usvn_home']
 
+#regenerate authz file
+if File.exists?("#{usvn_home}/tools/regenerate_authz_file.php")
+  system("cd #{usvn_home} && php #{usvn_home}/tools/regenerate_authz_file.php #{usvn_home}/config.ini")
+else
+  puts "File #{usvn_home}/tools/regenerate_authz_file.php DOES NOT Exists!"
+end

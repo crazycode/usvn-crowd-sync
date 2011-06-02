@@ -41,6 +41,7 @@ Gem::Specification.new do |s|
     "spec/spec_helper.rb",
     "spec/usvn-crowd-sync_spec.rb",
     "tools/regenerate_authz_file.php",
+    "usvn-crowd-sync.gemspec",
     "usvn-crowd-sync.yml"
   ]
   s.homepage = %q{http://github.com/crazycode/usvn-crowd-sync}

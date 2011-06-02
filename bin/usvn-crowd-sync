@@ -25,6 +25,12 @@ crowd_group_names.each do |g|
   puts g
 end
 
+ug_hashcode1 = 0
+GroupUser.all.each { |ug| ug_hashcode1 += ug.hash }
+
+cached_user_hash = Hash.new
+User.all.each { |u| cached_user_hash[u.login] = u }
+
 groups = Group.create_or_update(crowd_group_names)
 
 User.all(:password => 'a9asdf907aafeqwerqw').each do |u|
@@ -33,8 +39,6 @@ end
 
 
 crowd_group_names.each do |gname|
-  puts "gname=#{gname}"
-
   begin
     user_names = crowd.find_users_in_group(gname)
     g = Group.first(:name => gname.strip)
@@ -42,11 +46,9 @@ crowd_group_names.each do |gname|
     unless g.nil?
       user_names.each do |name|
         begin
-          u = User.first(:login => name)
+          u = cached_user_hash[name] || User.first(:login => name)
           if u.nil?
             crowd_user = crowd.find_by_name(name)
-
-            #email = crowd_user.email.strip if crowd_user.email.blank?
             u = User.create(:login => crowd_user.name,
                             :firstname => crowd_user.name,
                             :lastname => crowd_user.full_name,
@@ -54,6 +56,7 @@ crowd_group_names.each do |gname|
                             :password => 'a9asdf907aafeqwerqw',
                             :secret_id => 'a9asdf907aafeqwerqw',
                             :is_admin => 0)
+            cached_user_hash[u.login] = u
           end
           ug = GroupUser.first(:users_id => u.id, :groups_id => g.id)
           if ug.nil?
@@ -69,12 +72,17 @@ crowd_group_names.each do |gname|
   end
 end
 
+ug_hashcode2 = 0
+GroupUser.all.each { |ug| ug_hashcode2 += ug.hash }
 
-usvn_home = config['usvn_home']
-
-#regenerate authz file
-if File.exists?("#{usvn_home}/tools/regenerate_authz_file.php")
-  system("cd #{usvn_home} && php #{usvn_home}/tools/regenerate_authz_file.php #{usvn_home}/config.ini")
+if ug_hashcode2 == ug_hashcode1
+  puts "Nothing Changed! before=#{ug_hashcode1}, after=#{ug_hashcode2}"
 else
-  puts "File #{usvn_home}/tools/regenerate_authz_file.php DOES NOT Exists!"
+  usvn_home = config['usvn_home']
+  #regenerate authz file
+  if File.exists?("#{usvn_home}/tools/regenerate_authz_file.php")
+    system("cd #{usvn_home} && php #{usvn_home}/tools/regenerate_authz_file.php #{usvn_home}/config.ini")
+  else
+    puts "File #{usvn_home}/tools/regenerate_authz_file.php DOES NOT Exists!"
+  end
 end

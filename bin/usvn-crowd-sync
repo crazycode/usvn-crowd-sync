@@ -41,9 +41,9 @@ crowd_group_names.each do |gname|
 
     unless g.nil?
       user_names.each do |name|
-        u = User.first(:login => name)
-        if u.nil?
-          begin
+        begin
+          u = User.first(:login => name)
+          if u.nil?
             crowd_user = crowd.find_by_name(name)
 
             #email = crowd_user.email.strip if crowd_user.email.blank?

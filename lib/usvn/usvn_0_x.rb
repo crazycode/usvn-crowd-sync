@@ -47,6 +47,7 @@ class Group
   def self.create_or_update(names)
     groups = []
     names.each do |name|
+      name.strip!
       if name =~ /^[a-zA-Z0-9\-\_]+$/
         g = Group.first(:name => name)
         if g.nil?

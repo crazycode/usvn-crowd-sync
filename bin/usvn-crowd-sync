@@ -19,13 +19,14 @@ config = YAML.load(File.new(CROWD_CONFIG_PATH))
 DataMapper.setup(:default, config["usvn_db"])
 
 crowd = Crowd.new(config)
+# 得到所有crowd的组名
 crowd_group_names = crowd.find_all_group_names
 
 crowd_group_names.each do |g|
   puts g
 end
 
-ug_hashcode1 = 0
+ug_hashcode1 = 0  # 用于确认用户组关系是否有修改
 GroupUser.all.each { |ug| ug_hashcode1 += ug.hash }
 
 cached_user_hash = Hash.new
@@ -33,17 +34,13 @@ User.all.each { |u| cached_user_hash[u.login] = u }
 
 groups = Group.create_or_update(crowd_group_names)
 
-User.all(:password => 'a9asdf907aafeqwerqw').each do |u|
-  GroupUser.all(:users_id => u.id).destroy
-end
-
-
 crowd_group_names.each do |gname|
   begin
     user_names = crowd.find_users_in_group(gname)
     g = Group.first(:name => gname.strip)
 
     unless g.nil?
+      userGroups = GroupUser.all(:groups_id => g.id).to_ary
       user_names.each do |name|
         begin
           u = cached_user_hash[name] || User.first(:login => name)
@@ -62,10 +59,16 @@ crowd_group_names.each do |gname|
           if ug.nil?
             GroupUser.create(:users_id => u.id, :groups_id => g.id, :is_leader => 0)
           end
+          # 从已有关系中删除
+          userGroups.delete_if {|ugx| ugx.users_id == u.id}
         rescue Exception => e1
           puts "User Not found #{name}: #{e1}"
         end
       end
+      # 删除多余的关系
+      userGroups.each { |ugx|
+        GroupUser.all(:groups_id => ugx.groups_id, :users_id => ugx.users_id).destroy
+      }
     end
   rescue Exception => e
     puts "Not found #{gname}: #{e}"

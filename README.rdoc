@@ -1,6 +1,6 @@
 = usvn-crowd-sync
 
-Description goes here.
+Sync Atlassian crowd's user & groups to USVN.
 
 == Contributing to usvn-crowd-sync
  

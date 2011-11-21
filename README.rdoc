@@ -1,9 +1,48 @@
 = usvn-crowd-sync
 
-Sync Atlassian crowd's user & groups to USVN.
+Sync Atlassian crowd's users & groups to USVN.
 
-== Contributing to usvn-crowd-sync
- 
+Current Only Support Linux box.
+
+== Install
+
+sudo gem install usvn-crowd-sync
+
+== Configuration
+
+The usvn-crowd-sync tool only need a configuration file /etc/usvn-crowd-sync.yml:
+
+  usvn_db:
+    adapter: mysql
+    user: root
+    password: your_usvn_password
+    host: localhost
+    encoding: utf-8
+    database: usvn
+
+  usvn_home: /var/www/usvn
+
+  application_login_url: http://127.0.0.1
+  application_name: your_app_name
+  application_password: your_app_password
+  crowd_server_url: http://127.0.0.1:8080/services/SecurityServer
+
+== Running
+
+Just run this command:
+
+  usvn-crowd-sync
+
+It will sync Atlassian crowd's users & groups to USVN database.
+
+You can add this command to cron jobs, for example:
+
+  */10 * * * * * /usr/bin/usvn-crowd-sync
+
+to run usvn-crowd-sync every 10 minutes.
+
+= Contributing to usvn-crowd-sync
+
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
 * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
 * Fork the project
